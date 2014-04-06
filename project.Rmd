@@ -1,0 +1,124 @@
+## Political party affiliation and confidence in major companies
+
+```{r echo=FALSE}
+options(width=100)
+```
+
+### Introduction:
+
+I will try answer in this to the question whether there is a relationship between respondents political party affiliation and their confidence in major companies? I think that could be interresting for representatives of these companies when they will be looking for support in politics or political parties can adjust their political program based on an output of the study.
+
+### Data:
+
+I am going to use data from General Social Survey (GSS). A sociological survey used to collect data on demographic characteristics and attitudes of residents of the United States. There are a total of 57,061 cases and 114 variables in this dataset. This is a cumulative data file for surveys conducted between 1972 - 2012. The survey consider all noninstitutionalized, English and Spanish speaking persons 18 years of age or older, living in the United States. The sampling technique was full probability sampling. The data were collected by these techniques: computer-assisted personal interview (CAPI), face-to-face interview, telephone interview.
+
+I will use two variables from the described dataset. Political party affiliattion (PARTYID) which contains answers to a question: "Generally speaking, do you usually think of yourself as a Republican, Democrat, Independent, or what?" and Confidence in major companies (CONBUS) which contains answers to a question: "I am going to name some major companies in this country. As far as the people running these institutions are concerned, would you say you have a great deal of confidence, only some confidence, or hardly any confidence at all in them?" It means that I will have two categorical variables each with more then 2 levels.
+
+My study is observational, because it was used random sampling from population but I cannot conduct random assignment. Base on our sampling design and population I should be able to generalise my result to all English and Spanish speaking persons 18 years of age or older, living in the United States. However I identified two possible source of biases. One source of bias is the fact it was a household survey. Many people in the younger demographic do not have houses so they are under represented. The way the study was conducted also requires the person to answer the survey, so this is also a limiting factor as certain types of people will not take the time. For these reasons the older demographic is over represented.
+
+Because we have the observational study without random assignment we can't establish casual links between the variables.
+
+#### Data load and cleanup:
+
+```{r results='hide',message=FALSE}
+load(url("http://bit.ly/dasi_gss_data"))
+#remove all rows which have some value NA
+data <- subset(gss, !is.na(partyid) & !is.na(conbus))
+partyid <- data$partyid
+conbus <- data$conbus
+```
+
+
+### Exploratory data analysis:
+
+Contingency table: 
+```{r}
+contingencyTable <- table(conbus, partyid)
+contingencyTable
+```
+
+```{r fig.width=10, fig.height=9}
+mosaicplot(partyid ~ conbus, main="Relationship between partyid and conbus", las = 2)
+```
+
+Plot shows that there could be relationship between the two variables. It shows that people affiliated with republicans could be more confident in major companies.
+
+### Inference:
+
+#### Hypotesis:
+H0 - Political party affiliation and confidence in major companies are independent. Political party affiliation do not vary by confidence in major companies.
+
+HA - Political party affiliation and confidence in major companies are dependent. Political party affiliation do  vary by confidence in major companies.
+
+#### Used method and conditions:
+Because I am going to evalueate relationship between two categorical variables and both of them have more then two levels I will use Chi-Square independence test. I will quantify how different the observed count are from the expected counts. Large deviations from what would be expected based on sampling variation alone will provide strong evidence for the alternative hypothesis. Observations have to be independent. It means that the observations has to be sampled randomly, which is stated in the survey description. The sampling was without replacement, but there is around 57k observations which is certainly less then 10% from the whole population. Also each observation has to contribute just to one cell in the contingency table which is true.
+
+I will compute expected values based on assumption that H0 is true. It means that both variables are independent.I will use this formula for each cell of the contingency table $expectedValue = \frac{rowTotal * columnTotal}{tableTotal}$
+
+```{r}
+rowSums <- rowSums(contingencyTable)
+tableTotal <- sum(rowSums)
+expectedValues <- sapply(colSums(contingencyTable), function(colSum) {
+  sapply(rowSums, function(rowSum) {
+    rowSum * colSum / tableTotal 
+  })
+})
+expectedValues
+```
+
+With expected values I can confirm the last condition that in each cell has to be at least 5 observations. Which is true.
+
+I will continue with computation $\chi^{2}$. I will use this formula:
+
+$$
+\chi^{2} = \sum_{i=1}^{numCells}\frac{(Observed - Expected)^{2}}{Expected}
+$$
+
+```{r}
+#craete tuples of expected and observed values, the first value in pair is observed, the second expected value
+tuples <- mapply(c, contingencyTable, expectedValues)
+#compute chi-square
+chiSquare <- sum(apply(tuples, 2, function(tuple) {
+  ((tuple[1] - tuple[2]) ^ 2) / tuple[2]
+}))
+chiSquare
+```
+
+The last step is a computation of p-value. For that I need compute degree of freedom which is defined as:
+
+$$
+df=(numRows - 1) * (numColumns - 1)
+$$
+
+```{r}
+df <- (ncol(contingencyTable) - 1) * (nrow(contingencyTable) - 1)
+df
+```
+
+And then I can compute p-value, which means probability that I can see observed values when H0 is true.
+
+```{r}
+pchisq(chiSquare, df, lower.tail = FALSE)
+```
+
+I will use 5% significance level and based on that decision and computed p-value I will reject H0. Because I am using chi-square test of independence and there is no other method which could be used for my question I cannot compare my result with a different method.
+
+### Conclusion:
+
+I can claim that data provide convincing evidence that there is a relationship between political party affiliation and confidence in major companies. The important thing which I have learned is that I cannot conclude any casual relationship because I have just the observational study. For future research could be interresting to focus on sample biases which I mentioned. So I could generalise my findings to the whole population.
+
+### Reference:
+
+Smith, Tom W., Michael Hout, and Peter V. Marsden. General Social Survey, 1972-2012 [Cumulative File]. ICPSR34802-v1. Storrs, CT: Roper Center for Public Opinion Research, University of Connecticut /Ann Arbor, MI: Inter-university Consortium for Political and Social Research [distributors], 2013-09-11. doi:10.3886/ICPSR34802.v1
+
+Persistent URL: http://doi.org/10.3886/ICPSR34802.v1
+
+### Apendix:
+Data preview:
+```{r}
+data[1:50, c("partyid", "conbus")]
+```
+
+
+
+
