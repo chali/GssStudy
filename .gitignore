@@ -1,6 +1,6 @@
 .Rhistory
 .Rdata
 .Rproj.user
-*.html
-*.md
+project.html
+project.md
 figure

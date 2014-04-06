@@ -1,0 +1,1 @@
+This is my research project for class Data Analysis and Statistical Inference (https://www.coursera.org/course/statistics) which I have done on Coursera.org.
